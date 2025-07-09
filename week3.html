@@ -1,0 +1,55 @@
+<!DOCTYPE html>\n<html lang="en">\n<head>\n  <link rel="manifest" href="manifest.json">\n  <meta name="theme-color" content="#f9f9f9">\n  <meta charset="UTF-8">\n  <title>Week 3 Workout Tracker</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }\n    h2 { margin-top: 40px; }\n    .exercise { margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }\n    label { display: inline-block; margin-right: 10px; }\n    button { margin-left: 10px; }\n    .timer { font-weight: bold; margin-left: 10px; }\n  </style>\n</head>\n<body>\n  <h1>3-Day Scientific Workout Plan – Week 3</h1>\n  <div id="workout"></div>\n  <audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>\n\n  <script>\n    
+    const plan = {
+      "Day 1 - Push & Core": [
+        { name: "Barbell Bench Press – 135lbs (AMRAP on last)", sets: 3 },
+        { name: "Cable Overhead Press – 60, 50, 40 lbs", sets: 3 },
+        { name: "Cable/Dumbbell Chest Fly – 30lbs x2, 25lbs x1", sets: 3 },
+        { name: "Overhead Cable Crunches", sets: 3 },
+        { name: "Hanging/Bench Knee Raises", sets: 2 },
+        { name: "Incline Treadmill Walk – 15 mins", sets: 1 }
+      ],
+      "Day 2 - Pull & Core": [
+        { name: "Barbell Deadlift – ~184lbs (AMRAP on last)", sets: 3 },
+        { name: "Cable Row", sets: 3 },
+        { name: "Cable Hammer Curls – ~52lbs", sets: 3 },
+        { name: "Cable Woodchoppers", sets: 3 },
+        { name: "Plank Hold – 30–45s", sets: 3 },
+        { name: "Bike Sprints – 20s/40s", sets: 8 }
+      ],
+      "Day 3 - Legs, Abs & Metcon": [
+        { name: "Barbell Back Squat – ~165lbs (AMRAP on last)", sets: 3 },
+        { name: "Cable Glute Kickbacks", sets: 3 },
+        { name: "Walking Lunges – 12 steps/leg", sets: 2 },
+        { name: "Weighted Decline Sit-ups", sets: 3 },
+        { name: "Row Machine or Ski Erg – 12 mins", sets: 1 }
+      ]
+    };
+const container = document.getElementById('workout');\n\n    Object.entries(plan).forEach(([day, exercises]) => {\n      const dayHeader = document.createElement('h2');\n      dayHeader.textContent = day;\n      container.appendChild(dayHeader);\n\n      exercises.forEach((ex, idx) => {\n        const div = document.createElement('div');\n        div.className = 'exercise';\n        const title = document.createElement('strong');\n        title.textContent = ex.name;\n        div.appendChild(title);\n\n        for (let i = 0; i < ex.sets; i++) {\n          const label = document.createElement('label');\n          const checkbox = document.createElement('input');\n          checkbox.type = 'checkbox';\n          checkbox.addEventListener('change', () => {\n            if (checkbox.checked) startTimer(label);\n          });\n          label.appendChild(checkbox);\n          label.append(` Set ${i + 1}`);\n          div.appendChild(label);\n        }\n\n        container.appendChild(div);\n      });\n    });\n\n    function startTimer(label) {\n      let seconds = 90;\n      const span = document.createElement('span');\n      span.className = 'timer';\n      label.appendChild(span);\n\n      const interval = setInterval(() => {\n        const m = Math.floor(seconds / 60);\n        const s = seconds % 60;\n        span.textContent = ` (${m}:${s.toString().padStart(2, '0')})`;\n        seconds--;\n        if (seconds < 0) {\n          clearInterval(interval);\n          document.getElementById('alarm').play();\n          span.textContent = ' ✅ Done';\n        }\n      }, 1000);\n    }\n  </script>\n</body>\n
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+
+    function downloadCSV() {
+      const rows = [["Day", "Exercise", "Set", "Completed"]];
+      document.querySelectorAll(".exercise").forEach(exDiv => {
+        const day = exDiv.closest("div").previousElementSibling?.textContent || "";
+        const title = exDiv.querySelector("strong")?.textContent || "";
+        exDiv.querySelectorAll("label").forEach((label, idx) => {
+          const checked = label.querySelector("input")?.checked ? "Yes" : "No";
+          rows.push([day, title, `Set ${idx + 1}`, checked]);
+        });
+      });
+
+      let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "workout_progress.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  </script>
+  <button onclick="downloadCSV()">Download Progress CSV</button>
+        \n</html>
