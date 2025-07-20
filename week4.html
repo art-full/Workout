@@ -11,7 +11,7 @@
     h2 { margin-top: 40px; }
     .exercise { margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
     label { display: inline-block; margin-right: 10px; }
-    button { margin-left: 10px; }
+    .weight-input, .reps-input { margin-left: 10px; width: 60px; }
     .timer { font-weight: bold; margin-left: 10px; }
   </style>
 </head>
@@ -20,57 +20,86 @@
   <div id="workout"></div>
   <audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
   <button onclick="downloadCSV()">Download Progress CSV</button>
+
   <script>
     const plan = {
   "Day 1 - Push & Core": [
-    { name: "Barbell Bench Press (AMRAP on last)", sets: 4 },
-    { name: "Cable Overhead Press", sets: 3 },
-    { name: "Cable Chest Fly", sets: [2, 1] },
-    { name: "Overhead Cable Crunches", sets: 3 },
-    { name: "Hanging/Bench Knee Raises", sets: 2 },
-    { name: "Incline Treadmill Walk", sets: 1 },
+    { name: "Barbell Bench Press (AMRAP on last)", sets: 4, id: "barbell_bench_press_(amrap_on_last)", weight: 138.4 },
+    { name: "Cable Overhead Press", sets: 3, id: "cable_overhead_press", weight: [61.5, 51.2, 41.0] },
+    { name: "Cable Chest Fly", sets: [2, 1], id: "cable_chest_fly", weight: [30.7, 25.6] },
+    { name: "Overhead Cable Crunches", sets: 3, id: "overhead_cable_crunches", weight: null },
+    { name: "Hanging/Bench Knee Raises", sets: 2, id: "hanging/bench_knee_raises", weight: null },
+    { name: "Incline Treadmill Walk", sets: 1, id: "incline_treadmill_walk", weight: null },
   ],
   "Day 2 - Pull & Core": [
-    { name: "Barbell Deadlift (AMRAP on last)", sets: 4 },
-    { name: "Cable Row", sets: 3 },
-    { name: "Cable Hammer Curls", sets: 3 },
-    { name: "Cable Woodchoppers", sets: 3 },
-    { name: "Plank Hold", sets: 3 },
-    { name: "Bike Sprints", sets: 8 },
+    { name: "Barbell Deadlift (AMRAP on last)", sets: 4, id: "barbell_deadlift_(amrap_on_last)", weight: 188.6 },
+    { name: "Cable Row", sets: 3, id: "cable_row", weight: null },
+    { name: "Cable Hammer Curls", sets: 3, id: "cable_hammer_curls", weight: 53.3 },
+    { name: "Cable Woodchoppers", sets: 3, id: "cable_woodchoppers", weight: null },
+    { name: "Plank Hold", sets: 3, id: "plank_hold", weight: null },
+    { name: "Bike Sprints", sets: 8, id: "bike_sprints", weight: null },
   ],
   "Day 3 - Legs, Abs & Metcon": [
-    { name: "Barbell Back Squat (AMRAP on last)", sets: 4 },
-    { name: "Cable Glute Kickbacks", sets: 3 },
-    { name: "Walking Lunges", sets: 2 },
-    { name: "Weighted Decline Sit-ups", sets: 3 },
-    { name: "Row Machine or Ski Erg", sets: 1 },
+    { name: "Barbell Back Squat (AMRAP on last)", sets: 4, id: "barbell_back_squat_(amrap_on_last)", weight: 169.1 },
+    { name: "Cable Glute Kickbacks", sets: 3, id: "cable_glute_kickbacks", weight: null },
+    { name: "Walking Lunges", sets: 2, id: "walking_lunges", weight: null },
+    { name: "Weighted Decline Sit-ups", sets: 3, id: "weighted_decline_sit-ups", weight: null },
+    { name: "Row Machine or Ski Erg", sets: 1, id: "row_machine_or_ski_erg", weight: null },
   ],
 };
+
     const container = document.getElementById('workout');
+
     Object.entries(plan).forEach(([day, exercises]) => {
       const dayHeader = document.createElement('h2');
       dayHeader.textContent = day;
       container.appendChild(dayHeader);
-      exercises.forEach((ex, idx) => {
+
+      exercises.forEach(ex => {
         const div = document.createElement('div');
         div.className = 'exercise';
         const title = document.createElement('strong');
         title.textContent = ex.name;
         div.appendChild(title);
+
+        if (ex.weight !== null) {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.className = 'weight-input';
+          input.placeholder = 'Weight';
+          input.value = loadState(`weight_${ex.id}`) || (Array.isArray(ex.weight) ? ex.weight.join(', ') : ex.weight);
+          input.addEventListener('change', () => saveState(`weight_${ex.id}`, input.value));
+          div.appendChild(input);
+        }
+
         for (let i = 0; i < ex.sets; i++) {
+          const setId = `${ex.id}_set${i}`;
           const label = document.createElement('label');
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
+          checkbox.checked = loadState(`check_${setId}`) === 'true';
           checkbox.addEventListener('change', () => {
+            saveState(`check_${setId}`, checkbox.checked);
             if (checkbox.checked) startTimer(label);
           });
           label.appendChild(checkbox);
           label.append(` Set ${i + 1}`);
+
+          const reps = document.createElement('input');
+          reps.type = 'text';
+          reps.className = 'reps-input';
+          reps.placeholder = 'Reps';
+          reps.value = loadState(`reps_${setId}`) || "";
+          reps.addEventListener('change', () => saveState(`reps_${setId}`, reps.value));
+          label.appendChild(reps);
+
           div.appendChild(label);
         }
+
         container.appendChild(div);
       });
     });
+
     function startTimer(label) {
       let seconds = 90;
       const span = document.createElement('span');
@@ -88,14 +117,19 @@
         }
       }, 1000);
     }
+
     function downloadCSV() {
-      const rows = [["Day", "Exercise", "Set", "Completed"]];
+      const rows = [["Day", "Exercise", "Set", "Completed", "Weight", "Reps"]];
       document.querySelectorAll(".exercise").forEach(exDiv => {
         const day = exDiv.closest("div").previousElementSibling?.textContent || "";
         const title = exDiv.querySelector("strong")?.textContent || "";
-        exDiv.querySelectorAll("label").forEach((label, idx) => {
-          const checked = label.querySelector("input")?.checked ? "Yes" : "No";
-          rows.push([day, title, `Set ${idx + 1}`, checked]);
+        const weight = exDiv.querySelector("input.weight-input")?.value || "";
+        const labels = exDiv.querySelectorAll("label");
+        labels.forEach((label, idx) => {
+          const checkbox = label.querySelector("input[type='checkbox']");
+          const checked = checkbox?.checked ? "Yes" : "No";
+          const reps = label.querySelector("input.reps-input")?.value || "";
+          rows.push([day, title, `Set ${idx + 1}`, checked, weight, reps]);
         });
       });
       let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
@@ -107,6 +141,15 @@
       link.click();
       document.body.removeChild(link);
     }
+
+    function saveState(key, value) {
+      localStorage.setItem(key, value);
+    }
+
+    function loadState(key) {
+      return localStorage.getItem(key);
+    }
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
     }
