@@ -17,14 +17,18 @@
     select { font-size: 1em; padding: 8px; width: 100%; margin-bottom: 20px; }
     .completed-day { background: #c8e6c9; }
     .day-option-completed::after { content: ' ✅'; }
+    .button-bar { text-align: center; margin: 15px 0; }
   </style>
 </head>
 <body>
   <h1>3-Day Scientific Workout Plan – Week 5</h1>
   <select id="day-selector"></select>
+  <div class="button-bar">
+    <button onclick="downloadCSV()">Download Progress CSV</button>
+    <button onclick="resetProgress()">Reset Progress</button>
+  </div>
   <div id="workout"></div>
   <audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
-  <button onclick="downloadCSV()">Download Progress CSV</button>
 
   <script>
     const plan = {
@@ -192,6 +196,12 @@
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+    }
+
+    function resetProgress() {
+      if (!confirm("Clear all saved progress for this week?")) return;
+      localStorage.clear();
+      location.reload();
     }
 
     function saveState(key, value) {
