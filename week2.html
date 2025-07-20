@@ -4,19 +4,24 @@
 <head>
   <meta charset="UTF-8">
   <title>3-Day Scientific Workout Plan – Week 2</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#f9f9f9">
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
-    h2 { margin-top: 40px; }
+    body { font-family: Arial, sans-serif; margin: 10px; background: #f9f9f9; }
+    h1, h2 { text-align: center; }
     .exercise { margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
-    label { display: inline-block; margin-right: 10px; }
+    label { display: block; margin-bottom: 5px; }
     .weight-input, .reps-input { margin-left: 10px; width: 60px; }
     .timer { font-weight: bold; margin-left: 10px; }
+    select { font-size: 1em; padding: 8px; width: 100%; margin-bottom: 20px; }
+    .completed-day { background: #c8e6c9; }
+    .day-option-completed::after { content: ' ✅'; }
   </style>
 </head>
 <body>
   <h1>3-Day Scientific Workout Plan – Week 2</h1>
+  <select id="day-selector"></select>
   <div id="workout"></div>
   <audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
   <button onclick="downloadCSV()">Download Progress CSV</button>
@@ -48,9 +53,23 @@
   ],
 };
 
-    const container = document.getElementById('workout');
+    const daySelector = document.getElementById("day-selector");
+    const container = document.getElementById("workout");
 
-    Object.entries(plan).forEach(([day, exercises]) => {
+    Object.keys(plan).forEach(day => {
+      const opt = document.createElement("option");
+      opt.value = day;
+      opt.textContent = day;
+      daySelector.appendChild(opt);
+    });
+
+    daySelector.addEventListener("change", () => {
+      renderDay(daySelector.value);
+    });
+
+    function renderDay(day) {
+      container.innerHTML = "";
+      const exercises = plan[day];
       const dayHeader = document.createElement('h2');
       dayHeader.textContent = day;
       container.appendChild(dayHeader);
@@ -73,7 +92,7 @@
         }
 
         for (let i = 0; i < ex.sets; i++) {
-          const setId = `${ex.id}_set${i}`;
+          const setId = `${ex.id}_set${i}_${day.replaceAll(' ', '_')}`;
           const label = document.createElement('label');
           const checkbox = document.createElement('input');
           checkbox.type = 'checkbox';
@@ -81,6 +100,7 @@
           checkbox.addEventListener('change', () => {
             saveState(`check_${setId}`, checkbox.checked);
             if (checkbox.checked) startTimer(label);
+            checkDayCompletion(day);
           });
           label.appendChild(checkbox);
           label.append(` Set ${i + 1}`);
@@ -95,10 +115,42 @@
 
           div.appendChild(label);
         }
-
         container.appendChild(div);
       });
-    });
+    }
+
+    function checkDayCompletion(day) {
+      const exercises = plan[day];
+      let totalSets = 0, completed = 0;
+      exercises.forEach(ex => {
+        for (let i = 0; i < ex.sets; i++) {
+          totalSets++;
+          const setId = `${ex.id}_set${i}_${day.replaceAll(' ', '_')}`;
+          if (loadState(`check_${setId}`) === 'true') {
+            completed++;
+          }
+        }
+      });
+      const isComplete = totalSets > 0 && completed === totalSets;
+      saveState(`done_${day.replaceAll(' ', '_')}`, isComplete);
+      updateDaySelector();
+      if (isComplete) {
+        const nextIndex = [...daySelector.options].findIndex(opt => opt.value === day) + 1;
+        const next = daySelector.options[nextIndex];
+        if (next) {
+          daySelector.value = next.value;
+          renderDay(next.value);
+        }
+      }
+    }
+
+    function updateDaySelector() {
+      [...daySelector.options].forEach(opt => {
+        const dayKey = opt.value.replaceAll(' ', '_');
+        const complete = loadState(`done_${dayKey}`) === 'true';
+        opt.className = complete ? 'day-option-completed' : '';
+      });
+    }
 
     function startTimer(label) {
       let seconds = 90;
@@ -121,7 +173,7 @@
     function downloadCSV() {
       const rows = [["Day", "Exercise", "Set", "Completed", "Weight", "Reps"]];
       document.querySelectorAll(".exercise").forEach(exDiv => {
-        const day = exDiv.closest("div").previousElementSibling?.textContent || "";
+        const day = daySelector.value;
         const title = exDiv.querySelector("strong")?.textContent || "";
         const weight = exDiv.querySelector("input.weight-input")?.value || "";
         const labels = exDiv.querySelectorAll("label");
@@ -153,6 +205,9 @@
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
     }
+
+    renderDay(daySelector.value || daySelector.options[0].value);
+    updateDaySelector();
   </script>
 </body>
 </html>
