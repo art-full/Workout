@@ -1,9 +1,95 @@
-<!DOCTYPE html>\n<html lang="en">\n<head>\n  <link rel="manifest" href="manifest.json">\n  <meta name="theme-color" content="#f9f9f9">\n  <meta charset="UTF-8">\n  <title>Week 2 Workout Tracker</title>\n  <style>\n    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }\n    h2 { margin-top: 40px; }\n    .exercise { margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }\n    label { display: inline-block; margin-right: 10px; }\n    button { margin-left: 10px; }\n    .timer { font-weight: bold; margin-left: 10px; }\n  </style>\n</head>\n<body>\n  <h1>3-Day Scientific Workout Plan – Week 2</h1>\n  <div id="workout"></div>\n  <audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>\n\n  <script>\n    const plan = {\n      "Day 1 - Push & Core": [\n        { name: "Barbell Bench Press – 135lbs", sets: 4 },\n        { name: "Cable Overhead Press (~40–50 lbs)", sets: 4 },\n        { name: "Dumbbell Chest Fly – 50lbs (25x2)", sets: 3 },\n        { name: "Overhead Cable Crunches – 50lbs", sets: 4 },\n        { name: "Hanging Knee Raises", sets: 3 },\n        { name: "Incline Treadmill Walk – 15 mins", sets: 1 }\n      ],\n      "Day 2 - Pull & Core": [\n        { name: "Barbell Deadlift – 185lbs", sets: 4 },\n        { name: "Cable Row – 100lbs", sets: 4 },\n        { name: "Hammer Curls – 50lbs", sets: 4 },\n        { name: "Cable Woodchoppers – 70lbs", sets: 4 },\n        { name: "Plank Hold – 60s", sets: 4 },\n        { name: "Bike Sprints – 40s/20s", sets: 9 }\n      ],\n      "Day 3 - Legs, Abs & Metcon": [\n        { name: "Barbell Back Squat – ~160lbs", sets: 4 },\n        { name: "Cable Glute Kickbacks", sets: 4 },\n        { name: "Walking Lunges – 12 steps/leg", sets: 3 },\n        { name: "Weighted Decline Sit-ups", sets: 4 },\n        { name: "Row Machine or Ski Erg – 12 mins", sets: 1 }\n      ]\n    };\n\n    const container = document.getElementById('workout');\n\n    Object.entries(plan).forEach(([day, exercises]) => {\n      const dayHeader = document.createElement('h2');\n      dayHeader.textContent = day;\n      container.appendChild(dayHeader);\n\n      exercises.forEach((ex, idx) => {\n        const div = document.createElement('div');\n        div.className = 'exercise';\n        const title = document.createElement('strong');\n        title.textContent = ex.name;\n        div.appendChild(title);\n\n        for (let i = 0; i < ex.sets; i++) {\n          const label = document.createElement('label');\n          const checkbox = document.createElement('input');\n          checkbox.type = 'checkbox';\n          checkbox.addEventListener('change', () => {\n            if (checkbox.checked) startTimer(label);\n          });\n          label.appendChild(checkbox);\n          label.append(` Set ${i + 1}`);\n          div.appendChild(label);\n        }\n\n        container.appendChild(div);\n      });\n    });\n\n    function startTimer(label) {\n      let seconds = 90;\n      const span = document.createElement('span');\n      span.className = 'timer';\n      label.appendChild(span);\n\n      const interval = setInterval(() => {\n        const m = Math.floor(seconds / 60);\n        const s = seconds % 60;\n        span.textContent = ` (${m}:${s.toString().padStart(2, '0')})`;\n        seconds--;\n        if (seconds < 0) {\n          clearInterval(interval);\n          document.getElementById('alarm').play();\n          span.textContent = ' ✅ Done';\n        }\n      }, 1000);\n    }\n  </script>\n</body>\n
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js');
-    }
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3-Day Scientific Workout Plan – Week 2</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f9f9f9">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h2 { margin-top: 40px; }
+    .exercise { margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    label { display: inline-block; margin-right: 10px; }
+    button { margin-left: 10px; }
+    .timer { font-weight: bold; margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <h1>3-Day Scientific Workout Plan – Week 2</h1>
+  <div id="workout"></div>
+  <audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+  <button onclick="downloadCSV()">Download Progress CSV</button>
+  <script>
+    
+const plan = {
+  "Day 1 - Push & Core": [
+    { name: "Barbell Bench Press – 135lbs", sets: 4 },
+    { name: "Cable Overhead Press (~40–50 lbs)", sets: 4 },
+    { name: "Dumbbell Chest Fly – 50lbs (25x2)", sets: 3 },
+    { name: "Overhead Cable Crunches – 50lbs", sets: 4 },
+    { name: "Hanging Knee Raises", sets: 3 },
+    { name: "Incline Treadmill Walk – 15 mins", sets: 1 }
+  ],
+  "Day 2 - Pull & Core": [
+    { name: "Barbell Deadlift – 185lbs", sets: 4 },
+    { name: "Cable Row – 100lbs", sets: 4 },
+    { name: "Hammer Curls – 50lbs", sets: 4 },
+    { name: "Cable Woodchoppers – 70lbs", sets: 4 },
+    { name: "Plank Hold – 60s", sets: 4 },
+    { name: "Bike Sprints – 40s/20s", sets: 9 }
+  ],
+  "Day 3 - Legs, Abs & Metcon": [
+    { name: "Barbell Back Squat – ~160lbs", sets: 4 },
+    { name: "Cable Glute Kickbacks", sets: 4 },
+    { name: "Walking Lunges – 12 steps/leg", sets: 3 },
+    { name: "Weighted Decline Sit-ups", sets: 4 },
+    { name: "Row Machine or Ski Erg – 12 mins", sets: 1 }
+  ]
+};
+
+    const container = document.getElementById('workout');
+    Object.entries(plan).forEach(([day, exercises]) => {
+      const dayHeader = document.createElement('h2');
+      dayHeader.textContent = day;
+      container.appendChild(dayHeader);
+      exercises.forEach((ex, idx) => {
+        const div = document.createElement('div');
+        div.className = 'exercise';
+        const title = document.createElement('strong');
+        title.textContent = ex.name;
+        div.appendChild(title);
+        for (let i = 0; i < ex.sets; i++) {
+          const label = document.createElement('label');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) startTimer(label);
+          });
+          label.appendChild(checkbox);
+          label.append(` Set ${i + 1}`);
+          div.appendChild(label);
+        }
+        container.appendChild(div);
+      });
+    });
+    function startTimer(label) {
+      let seconds = 90;
+      const span = document.createElement('span');
+      span.className = 'timer';
+      label.appendChild(span);
+      const interval = setInterval(() => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        span.textContent = ` (${m}:${s.toString().padStart(2, '0')})`;
+        seconds--;
+        if (seconds < 0) {
+          clearInterval(interval);
+          document.getElementById('alarm').play();
+          span.textContent = ' ✅ Done';
+        }
+      }, 1000);
+    }
     function downloadCSV() {
       const rows = [["Day", "Exercise", "Set", "Completed"]];
       document.querySelectorAll(".exercise").forEach(exDiv => {
@@ -14,7 +100,6 @@
           rows.push([day, title, `Set ${idx + 1}`, checked]);
         });
       });
-
       let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
@@ -24,6 +109,9 @@
       link.click();
       document.body.removeChild(link);
     }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
   </script>
-  <button onclick="downloadCSV()">Download Progress CSV</button>
-        \n</html>
+</body>
+</html>
