@@ -38,9 +38,19 @@
   <h1>Workout Tracker</h1>
   <a href="week2.html">🏋️ Week 2 Workout</a>
   <a href="week3.html">🏋️ Week 3 Workout</a>
+  <a href="week4.html" id="latest-link">🏋️ Week 4 Workout</a>
+
   <script>
+    // PWA support
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('service-worker.js');
+    }
+
+    // Auto-open Week 4 link as latest workout
+    const params = new URLSearchParams(window.location.search);
+    const skipRedirect = params.get('noredirect');
+    if (!skipRedirect) {
+      window.location.href = "week4.html";
     }
   </script>
 </body>

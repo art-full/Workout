@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>3-Day Scientific Workout Plan – Week 4</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#f9f9f9">
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f9f9f9; }
+    h2 { margin-top: 40px; }
+    .exercise { margin-bottom: 20px; padding: 10px; background: #fff; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
+    label { display: inline-block; margin-right: 10px; }
+    button { margin-left: 10px; }
+    .timer { font-weight: bold; margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <h1>3-Day Scientific Workout Plan – Week 4</h1>
+  <div id="workout"></div>
+  <audio id="alarm" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+  <button onclick="downloadCSV()">Download Progress CSV</button>
+  <script>
+    const plan = {
+  "Day 1 - Push & Core": [
+    { name: "Barbell Bench Press (AMRAP on last)", sets: 4 },
+    { name: "Cable Overhead Press", sets: 3 },
+    { name: "Cable Chest Fly", sets: [2, 1] },
+    { name: "Overhead Cable Crunches", sets: 3 },
+    { name: "Hanging/Bench Knee Raises", sets: 2 },
+    { name: "Incline Treadmill Walk", sets: 1 },
+  ],
+  "Day 2 - Pull & Core": [
+    { name: "Barbell Deadlift (AMRAP on last)", sets: 4 },
+    { name: "Cable Row", sets: 3 },
+    { name: "Cable Hammer Curls", sets: 3 },
+    { name: "Cable Woodchoppers", sets: 3 },
+    { name: "Plank Hold", sets: 3 },
+    { name: "Bike Sprints", sets: 8 },
+  ],
+  "Day 3 - Legs, Abs & Metcon": [
+    { name: "Barbell Back Squat (AMRAP on last)", sets: 4 },
+    { name: "Cable Glute Kickbacks", sets: 3 },
+    { name: "Walking Lunges", sets: 2 },
+    { name: "Weighted Decline Sit-ups", sets: 3 },
+    { name: "Row Machine or Ski Erg", sets: 1 },
+  ],
+};
+    const container = document.getElementById('workout');
+    Object.entries(plan).forEach(([day, exercises]) => {
+      const dayHeader = document.createElement('h2');
+      dayHeader.textContent = day;
+      container.appendChild(dayHeader);
+      exercises.forEach((ex, idx) => {
+        const div = document.createElement('div');
+        div.className = 'exercise';
+        const title = document.createElement('strong');
+        title.textContent = ex.name;
+        div.appendChild(title);
+        for (let i = 0; i < ex.sets; i++) {
+          const label = document.createElement('label');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) startTimer(label);
+          });
+          label.appendChild(checkbox);
+          label.append(` Set ${i + 1}`);
+          div.appendChild(label);
+        }
+        container.appendChild(div);
+      });
+    });
+    function startTimer(label) {
+      let seconds = 90;
+      const span = document.createElement('span');
+      span.className = 'timer';
+      label.appendChild(span);
+      const interval = setInterval(() => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        span.textContent = ` (${m}:${s.toString().padStart(2, '0')})`;
+        seconds--;
+        if (seconds < 0) {
+          clearInterval(interval);
+          document.getElementById('alarm').play();
+          span.textContent = ' ✅ Done';
+        }
+      }, 1000);
+    }
+    function downloadCSV() {
+      const rows = [["Day", "Exercise", "Set", "Completed"]];
+      document.querySelectorAll(".exercise").forEach(exDiv => {
+        const day = exDiv.closest("div").previousElementSibling?.textContent || "";
+        const title = exDiv.querySelector("strong")?.textContent || "";
+        exDiv.querySelectorAll("label").forEach((label, idx) => {
+          const checked = label.querySelector("input")?.checked ? "Yes" : "No";
+          rows.push([day, title, `Set ${idx + 1}`, checked]);
+        });
+      });
+      let csvContent = "data:text/csv;charset=utf-8," + rows.map(e => e.join(",")).join("\n");
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "workout_progress.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js');
+    }
+  </script>
+</body>
+</html>
