@@ -1,0 +1,145 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Create/Edit Workout Week</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: sans-serif; padding: 1rem; max-width: 600px; margin: auto; }
+    input, button { margin: 0.2rem 0; }
+    .exercise { border: 1px solid #ccc; padding: 0.5rem; margin: 0.5rem 0; }
+    .day { margin: 1rem 0; border: 1px solid black; padding: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>Create/Edit Workout Week</h1>
+  <div id="days-container"></div>
+  <button onclick="addDay()">Add New Day</button>
+  <button onclick="saveWeek()">Save This Week</button>
+<button onclick="duplicatePreviousWeek()">Duplicate Last Saved Week</button>
+
+<button onclick="exportCSV()">Export as CSV</button>
+
+  <button onclick="renderWeek()">Render This Week</button>
+  <div id="output"></div>
+
+<script>
+let weekPlan = [];
+
+function addDay() {
+  const dayIndex = weekPlan.length;
+  const day = {
+    title: `Day ${dayIndex + 1}`,
+    exercises: []
+  };
+  weekPlan.push(day);
+  renderDays();
+}
+
+function addExercise(dayIndex) {
+  const name = prompt("Exercise name?");
+  if (!name) return;
+  weekPlan[dayIndex].exercises.push({ name, sets: 3, weight: "", amrap: false });
+  renderDays();
+}
+
+function updateExercise(dayIndex, exIndex, field, value) {
+  weekPlan[dayIndex].exercises[exIndex][field] = value;
+}
+
+function renderDays() {
+  const container = document.getElementById("days-container");
+  container.innerHTML = "";
+  weekPlan.forEach((day, dayIndex) => {
+    const div = document.createElement("div");
+    div.className = "day";
+    div.innerHTML = `<h2 contenteditable onblur="weekPlan[${dayIndex}].title=this.innerText">${day.title}</h2>`;
+    day.exercises.forEach((ex, exIndex) => {
+      div.innerHTML += `
+        <div class="exercise">
+          <strong contenteditable onblur="updateExercise(${dayIndex},${exIndex},'name',this.innerText)">${ex.name}</strong><br>
+          Sets: <input type="number" value="${ex.sets}" min="1" onchange="updateExercise(${dayIndex},${exIndex},'sets',parseInt(this.value))"><br>
+          Weight: <input value="${ex.weight}" onchange="updateExercise(${dayIndex},${exIndex},'weight',this.value)"><br>
+          AMRAP: <input type="checkbox" ${ex.amrap ? "checked" : ""} onchange="updateExercise(${dayIndex},${exIndex},'amrap',this.checked)">
+        </div>`;
+    });
+    div.innerHTML += `<button onclick="addExercise(${dayIndex})">Add Exercise</button>`;
+    container.appendChild(div);
+  });
+}
+
+function saveWeek() {
+  localStorage.setItem("customWeek", JSON.stringify(weekPlan));
+  alert("Week saved!");
+}
+
+function renderWeek() {
+  const container = document.getElementById("output");
+  container.innerHTML = "";
+  const saved = JSON.parse(localStorage.getItem("customWeek") || "[]");
+
+  saved.forEach((day, dayIndex) => {
+    const d = document.createElement("div");
+    d.innerHTML = `<h2>${day.title}</h2>`;
+    day.exercises.forEach((ex, exIndex) => {
+      const key = `${dayIndex}_${exIndex}`;
+      d.innerHTML += `<div><strong>${ex.name}</strong><br>`;
+      for (let i = 0; i < ex.sets; i++) {
+        const setKey = `check_${key}_set${i}`;
+        const checked = localStorage.getItem(setKey) ? "checked" : "";
+        d.innerHTML += `<label><input type="checkbox" ${checked} onchange="localStorage.setItem('${setKey}', this.checked); startTimer()"> Set ${i+1}</label> `;
+      }
+      d.innerHTML += `<br>Weight: ${ex.weight || "-"} ${ex.amrap ? "(AMRAP)" : ""}</div><hr>`;
+    });
+    container.appendChild(d);
+  });
+}
+
+function startTimer() {
+  const duration = 90;
+  const alertAudio = new Audio("https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg");
+  let remaining = duration;
+  const timer = setInterval(() => {
+    remaining--;
+    if (remaining <= 0) {
+      clearInterval(timer);
+      alertAudio.play();
+    }
+  }, 1000);
+}
+
+
+function exportCSV() {
+  const saved = JSON.parse(localStorage.getItem("customWeek") || "[]");
+  let csv = "Day,Exercise,Set,Weight,AMRAP\n";
+  saved.forEach((day, dayIndex) => {
+    day.exercises.forEach((ex, exIndex) => {
+      for (let i = 0; i < ex.sets; i++) {
+        csv += `${day.title},${ex.name},${i + 1},${ex.weight || ""},${ex.amrap ? "Yes" : "No"}\n`;
+      }
+    });
+  });
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "custom_week.csv";
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+
+function duplicatePreviousWeek() {
+  const previous = JSON.parse(localStorage.getItem("customWeek") || "[]");
+  if (!previous.length) return alert("No previous week to duplicate.");
+  const newWeek = JSON.parse(JSON.stringify(previous)); // Deep copy
+  weekPlan = newWeek;
+  renderDays();
+}
+
+</script>
+</body>
+</html>
